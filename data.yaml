@@ -1,13 +1,7 @@
-train: ../train/images
-val: ../valid/images
-test: ../test/images
+path: yolo_fuck
+train: images/train
+val: images/val
+test: images/test
 
-nc: 1
-names: ['License_Plate']
-
-roboflow:
-  workspace: devs-place
-  project: license-plate-recognition-rxg4e-z5sbr
-  version: 1
-  license: CC BY 4.0
-  url: https://universe.roboflow.com/devs-place/license-plate-recognition-rxg4e-z5sbr/dataset/1
+names:
+  0: plate
