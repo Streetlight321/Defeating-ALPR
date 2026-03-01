@@ -20,7 +20,7 @@ This repository contains research tools and artifacts used to study adversarial 
 - Usage: run `python File_Organizer.py` from the repo root. Ensure the `UFPR-ALPR dataset` directory is present and that `Pillow` is installed.
 
 **Methodology (next steps / workflow)**
-
+![Methodology_Image](https://github.com/Streetlight321/PlatePeeper/blob/main/figure1(1).png)
 1. Collect a new batch of license-plate images (controlled dataset or images you have permission to use).
 2. For each image, apply an adversarial noise overlay to the license-plate region (generate multiple variants per image using different overlay parameters).
 3. Evaluate each noisy image with the detection + OCR pipeline (YOLO detector -> OCR recognizer such as EasyOCR).
