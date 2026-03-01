@@ -6,7 +6,7 @@ This repository contains research tools and artifacts used to study adversarial 
 
 **Files & Purpose**
 
-- **`File_Organizer.py`**: Prepares the UFPR dataset into a YOLO-compatible layout. It creates a `yolo_fuck` folder with `images/{train,val,test}` and `labels/{train,val,test}`, copies PNGs and label .txt files from the UFPR-ALPR dataset structure, and rewrites label files into YOLO-format bounding boxes derived from `corners:` entries in the original txt files. Run from the repository root; Pillow is required.
+- **`File_Organizer.py`**: Prepares the UFPR dataset into a YOLO-compatible layout. It creates a `yolo_train` folder with `images/{train,val,test}` and `labels/{train,val,test}`, copies PNGs and label .txt files from the UFPR-ALPR dataset structure, and rewrites label files into YOLO-format bounding boxes derived from `corners:` entries in the original txt files. Run from the repository root; Pillow is required.
 - **`YOLO_model.pt`**: Project's trained YOLO model (provided by me for the group's internal research).
 - **`yolo11n.pt`**: A smaller YOLO weight file included for training/testing compatibility.
 - **`OCR.ipynb`**: Notebook with experiments and transformations intended to help EasyOCR read license plates (preprocessing, augmentation, and evaluation).
