@@ -161,7 +161,7 @@ This creates a YOLO-compatible directory with `images/{train,val,test}` and `lab
 ---
 
 ## Example Result
-!lil_fork[lilfork.png]
+![lil_fork](lilfork.png)
 ## Classification Definitions
 
 | Class | Detection | Recognition | Interpretation |
