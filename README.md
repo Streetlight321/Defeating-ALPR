@@ -1,148 +1,193 @@
 # PlateCloak — Adversarial ALPR Research Toolkit
 
-A collection of research tools for studying adversarial methods against Automatic License Plate Recognition (ALPR) systems. This work is **strictly research-focused**.
+A research toolkit for studying adversarial robustness of Automatic License Plate Recognition (ALPR) systems. This project implements a three-stage ALPR pipeline (detection → preprocessing → OCR), a configurable perturbation framework, and batch evaluation tools to systematically measure how controlled image degradation affects recognition performance.
 
-> **Warning:** Do NOT use these tools to evade law enforcement, commit crimes, harass individuals, or otherwise break the law. Only run experiments on images you own or have explicit permission to use. Do not apply or test adversarial patterns on real vehicles or in public without authorization.
+> **Warning:** This toolkit is for **academic research only**. Do NOT use these tools to evade law enforcement, commit crimes, harass individuals, or otherwise break the law. Only run experiments on images you own or have explicit permission to use. Do not apply or test adversarial patterns on real vehicles or in public without authorization.
 
 ---
 
-## 📁 Repository Structure
+## Key Findings
+
+**Perturbation effectiveness is plate-specific and non-transferable.** Adversarial patterns optimized for one license plate do not generalize to other plates. Each plate's unique character arrangement, font weight, spacing, and contrast profile creates a distinct feature landscape, meaning perturbation parameters that successfully degrade recognition for one plate may have little or no effect on another. This implies that ALPR systems are not vulnerable to a single universal adversarial pattern, and any adversarial strategy must be individually calibrated per plate instance.
+
+**Small, numerous geometric shapes are more effective than large ones.** Configurations using many small shapes (40–50 shapes at 1–5 pixel size) consistently outperformed fewer, larger shapes at disrupting detection. Small shapes distributed across the plate region interfere with feature extraction at the convolutional level without creating obvious visual artifacts.
+
+**Noise intensity exhibits threshold behavior.** ALPR detection does not degrade linearly with increasing Gaussian noise. Instead, detection remains stable up to a critical noise intensity, after which performance drops sharply. This suggests the detection model applies internal confidence thresholds rather than degrading gracefully under noise.
+
+**Combined perturbations outperform isolated techniques.** Applying shapes, noise, warp, and texture simultaneously produces higher evasion rates than any single perturbation type alone. The interaction between perturbation types creates compound degradation that the detection and recognition stages cannot individually compensate for.
+
+**Visual stealth and evasion effectiveness are competing objectives.** Perturbation configurations that maximize evasion tend to introduce visible artifacts. Balancing evasion rate against visual conspicuousness requires careful parameter tuning, as aggressive settings achieve high Class C rates but at the cost of human-noticeable distortion.
+
+---
+
+## Repository Structure
 
 | File / Folder | Purpose |
 |---|---|
-| `File_Organizer.py` | Prepares the UFPR-ALPR dataset into a YOLO-compatible folder layout |
-| `ALPRGbatch.py` | Batch-processes a folder of images through an ALPR pipeline to check adversarial effectiveness |
-| `ocr.py` | Full ALPR pipeline: YOLO detection → multi-pass OCR with preprocessing variants |
-| `target.py` | Resizes raw overlay PNGs to a consistent target size before dataset generation |
 | `PlateShapeCreator/` | Python package (`plateshapez`) for generating adversarially perturbed overlay datasets |
-| `YOLO_model.pt` | Trained YOLO model for internal research use |
-| `yolo11n.pt` | Smaller YOLO weights for training/testing compatibility |
-| `OCR.ipynb` | Notebook with EasyOCR preprocessing experiments |
+| `ALPRGbatch.py` | Batch evaluation: runs ALPR on a folder and classifies results into Class A/B/C |
+| `ocr.py` | Full ALPR pipeline: YOLO detection → multi-pass OCR with preprocessing variants |
+| `File_Organizer.py` | Converts the UFPR-ALPR dataset into YOLO-compatible folder layout |
+| `neat_integration/` | Analysis and parameter sweep tools |
+| `YOLO_model.pt` | Trained YOLO model for license plate detection |
 | `data.yaml` | Dataset manifest for YOLO training |
 | `requirements.txt` | Python dependencies |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
 - Python 3.10+
 - [uv](https://github.com/astral-sh/uv) (recommended) or pip
 
-Install uv if you don't have it:
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/your-repo/platecloaker.git
+cd platecloaker
+
+# Install core dependencies
+pip install -r requirements.txt
+
+# Install the plateshapez dataset generator
+cd PlateShapeCreator
+uv sync
+uv pip install -e .
+cd ..
+```
+
 ---
 
-## Workflow: Generate Adversarial Overlays
+## Workflow
 
-This is the core loop for creating and testing adversarial license plate overlays.
+### 1. Prepare Input Images
 
-### Step 1 — Add your license plate images
-
-Place your license plate PNG images in the `overlays_raw/` folder. They must be `.png` files. Transparent-background PNGs work best.
+Place vehicle background images (JPG) in a `backgrounds/` folder and cropped license plate overlays (transparent PNG) in an `overlays/` folder.
 
 ```
-overlays_raw/
-├── plate_001.png
-├── plate_002.png
+project/
+├── backgrounds/     # Vehicle images
+├── overlays/        # License plate images (PNG with alpha)
 └── ...
 ```
 
-### Step 2 — Resize overlays to target dimensions
+### 2. Resize Overlays
 
-Run `target.py` to resize all PNGs from `overlays_raw/` into the `overlays/` folder at a consistent resolution:
+Standardize overlay dimensions to match the scale of your background images:
 
 ```bash
 python target.py
 ```
 
-You can adjust `TARGET_WIDTH` and `TARGET_HEIGHT` inside `target.py` to match the scale of your background images.
+Adjust `TARGET_WIDTH` and `TARGET_HEIGHT` inside `target.py` as needed.
 
-### Step 3 — Generate adversarial dataset
-
-Place your vehicle background images (JPG) in a `backgrounds/` folder, then run:
+### 3. Generate Adversarial Dataset
 
 ```bash
-uv run generate.py
+cd PlateShapeCreator
+uv run advplate generate
 ```
 
-This uses the `plateshapez` library to composite your overlays onto backgrounds and apply adversarial perturbations (noise, shapes, warp, texture). Output images and metadata are saved to `dataset/`.
+Or use the Python API with specific perturbation parameters:
 
-To customize perturbations, edit `generate.py` or pass a config file. See `PlateShapeCreator/README.md` for full options.
+```python
+from plateshapez import DatasetGenerator
 
----
+gen = DatasetGenerator(
+    bg_dir="backgrounds",
+    overlay_dir="overlays",
+    out_dir="dataset",
+    perturbations=[
+        {"name": "shapes", "params": {"num_shapes": 47, "min_size": 1, "max_size": 5}},
+        {"name": "noise", "params": {"intensity": 25}},
+        {"name": "warp", "params": {"intensity": 1.5, "frequency": 5.0}},
+        {"name": "texture", "params": {"type": "grain", "intensity": 0.27}},
+    ],
+    random_seed=1337,
+)
+gen.run(n_variants=500)
+```
 
-## Check Adversarial Effectiveness
+### 4. Evaluate Adversarial Effectiveness
 
-Use `ALPRGbatch.py` to run a folder of (potentially adversarially perturbed) images through the ALPR pipeline and collect results:
+Run the batch evaluator on your generated dataset:
 
 ```bash
 python ALPRGbatch.py
 ```
 
-A folder picker dialog will open. Select the folder containing the images you want to evaluate. The script will:
+Select the folder containing generated images. The script classifies each image:
 
-- Run ALPR on every `.png`, `.jpg`, and `.jpeg` in the folder
-- Save a `alpr_results.csv` with plate text, confidence scores, and bounding boxes
-- Save annotated images with detections drawn to an `annotated_output/` subfolder
+- **Class A** — Plate detected and read correctly
+- **Class B** — Plate detected but misread
+- **Class C** — Plate not detected at all
 
-Use the CSV to compare which adversarial variants caused misreads or missed detections.
+Results are saved to `alpr_results.csv` with confidence scores, bounding boxes, and per-image classifications. Images are sorted into `Class A/`, `Class B/`, and `Class C/` subdirectories for inspection.
 
 ---
 
-## Installing Dependencies
+## Perturbation Types
 
-### Using uv (recommended)
+| Perturbation | Description | Key Parameters |
+|---|---|---|
+| **Shapes** | Random geometric shapes (rectangles, ellipses, triangles) simulating occlusion | `num_shapes` (5–50), `min_size`, `max_size` (1–25 px) |
+| **Noise** | Additive Gaussian noise simulating sensor noise or compression artifacts | `intensity` (σ = 5–50) |
+| **Warp** | Sinusoidal displacement simulating perspective distortion or motion | `intensity` (0.5–20.0), `frequency` (5.0–50.0) |
+| **Texture** | Surface overlays (grain, scratches, dirt) simulating environmental wear | `type`, `intensity` (0.0–1.0) |
+
+All perturbations support a `scope` parameter: `region` (default, plate area only) or `global` (entire image).
+
+---
+
+## Analysis Tools
+
+The `neat_integration/` folder contains tools for parameter analysis:
 
 ```bash
-# For the core toolkit (ocr.py, ALPRGbatch.py, etc.)
-uv pip install -r requirements.txt
+cd neat_integration
 
-# For the plateshapez dataset generator
-cd PlateShapeCreator
-uv sync
-```
+# Sweep noise intensity to find the detection threshold
+python noise_sweep.py -b ../PlateShapeCreator/backgrounds -o ../PlateShapeCreator/overlays
 
-### Using pip
+# Plot fitness over time from generation data
+python chart_fitness_over_time.py
 
-```bash
-pip install -r requirements.txt
+# Plot detection vs evasion rate from noise sweep data
+python chart_detection_vs_evasion.py
 ```
 
 ---
 
 ## Dataset Preparation (UFPR-ALPR)
 
-If you're using the UFPR-ALPR dataset, `File_Organizer.py` converts it into a YOLO-compatible layout:
+To convert the UFPR-ALPR dataset into YOLO format:
 
 ```bash
 python File_Organizer.py
 ```
 
-This creates a `yolo_check/` folder with `images/{train,val,test}` and `labels/{train,val,test}` subdirectories, copies images and labels from the UFPR dataset's track structure, and rewrites label files into YOLO bounding box format.
+This creates a YOLO-compatible directory with `images/{train,val,test}` and `labels/{train,val,test}` subdirectories, copies images from the UFPR track structure, and rewrites annotation files into YOLO bounding box format.
 
-**Requires:** the `UFPR-ALPR dataset/` directory to be present at the repo root, and `Pillow` installed.
+**Requires:** the `UFPR-ALPR dataset/` directory at the repo root, and `Pillow` installed.
 
 ---
 
-## Research Methodology
+## Classification Definitions
 
-The general workflow for studying adversarial robustness:
+| Class | Detection | Recognition | Interpretation |
+|---|---|---|---|
+| **Class A** | ✓ Detected | ✓ Correct | Perturbation had no effect |
+| **Class B** | ✓ Detected | ✗ Wrong | OCR disrupted but plate still localized |
+| **Class C** | ✗ Not detected | — | Detection stage failed entirely |
 
-1. Collect background vehicle images you have permission to use
-2. Generate adversarial overlay variants using `generate.py` / `plateshapez`
-3. Evaluate each variant with `ALPRGbatch.py`:
-   - Plate read correctly → `unaffected`
-   - Plate detected but misread → `OCR_Error`
-   - Plate not detected at all → `No_Detection`
-4. Collect overlays that caused `No_Detection` as training signal
-5. Iterate: refine noise generation and re-evaluate
-
-![Methodology](https://github.com/Streetlight321/PlatePeeper/blob/main/figure1(1).png)
+Class C is the strongest adversarial outcome, as it prevents any downstream recognition. Class B indicates partial effectiveness where the perturbation disrupted character features but not plate-level features used by the detector.
 
 ---
 
@@ -153,5 +198,15 @@ The general workflow for studying adversarial robustness:
 - Keep datasets and adversarial artifacts private; avoid publishing raw patterns that could enable misuse
 - Seek institutional or legal review (IRB) where appropriate
 - Follow responsible disclosure practices
+- **Adversarial patterns are plate-specific and non-transferable** — findings from this research do not constitute a general-purpose evasion method
 
-This repository is maintained for **internal research only**. Contact the project lead with questions. Do not distribute adversarial artifacts.
+This repository is maintained for **academic research only**.
+
+---
+
+## References
+
+- Laroca, R. et al. (2018). UFPR-ALPR dataset.
+- Jocher, G. (2023). Ultralytics YOLO.
+- Stanley, K. O. & Miikkulainen, R. (2002). Evolving neural networks through augmenting topologies.
+- JaidedAI (2026). EasyOCR.
