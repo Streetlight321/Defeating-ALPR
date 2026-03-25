@@ -146,25 +146,6 @@ All perturbations support a `scope` parameter: `region` (default, plate area onl
 
 ---
 
-## Analysis Tools
-
-The `neat_integration/` folder contains tools for parameter analysis:
-
-```bash
-cd neat_integration
-
-# Sweep noise intensity to find the detection threshold
-python noise_sweep.py -b ../PlateShapeCreator/backgrounds -o ../PlateShapeCreator/overlays
-
-# Plot fitness over time from generation data
-python chart_fitness_over_time.py
-
-# Plot detection vs evasion rate from noise sweep data
-python chart_detection_vs_evasion.py
-```
-
----
-
 ## Dataset Preparation (UFPR-ALPR)
 
 To convert the UFPR-ALPR dataset into YOLO format:
@@ -179,6 +160,8 @@ This creates a YOLO-compatible directory with `images/{train,val,test}` and `lab
 
 ---
 
+## Example Result
+!lil_fork[lilfork.png]
 ## Classification Definitions
 
 | Class | Detection | Recognition | Interpretation |
