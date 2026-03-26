@@ -5,6 +5,27 @@ A research toolkit for studying adversarial robustness of Automatic License Plat
 > **Warning:** This toolkit is for **academic research only**. Do NOT use these tools to evade law enforcement, commit crimes, harass individuals, or otherwise break the law. Only run experiments on images you own or have explicit permission to use. Do not apply or test adversarial patterns on real vehicles or in public without authorization.
 
 ---
+## For Recruiters & Non-Technical Readers
+ 
+This project is a capstone research system that studies the limits and weaknesses of AI-powered license plate readers — the kind used in parking garages, toll booths, traffic cameras, and law enforcement. Here's what each major piece of the project does, without the jargon:
+ 
+**The core question this project answers:** *How much do you have to mess up a license plate image before an AI can no longer read it?*
+ 
+---
+### What Each Tool Does
+ 
+**`ocr.py` — The License Plate Reader**
+This is the "brain" that reads license plates from photos. It works in two stages: first it finds where the plate is in the image (like spotting a sign in a crowded photo), then it reads the characters on it (like a human squinting at a blurry image). It tries four different image-enhancement techniques automatically and picks whichever one gives the most confident result. Think of it as a very determined human who tries adjusting the brightness, contrast, and zoom before giving up.
+ 
+**`PlateShapeCreator/` — The Distortion Lab**
+This is a toolkit for programmatically "messing up" license plate images in controlled, repeatable ways. It can add tiny random shapes, digital noise, warping, and texture effects — all with precise settings you can dial up or down. It's designed like a scientific instrument: you set the parameters, it applies them consistently every time, and it saves a record of exactly what it did so experiments can be reproduced. Think of it like a photo editor on autopilot, but purpose-built for adversarial research.
+ 
+**`ALPRGbatch.py` — The Grader**
+After generating hundreds of distorted images, this tool runs all of them through the plate reader automatically and scores the results. It sorts every image into one of three buckets: the AI read it correctly (bad — the distortion didn't work), the AI read it but got it wrong (partial success), or the AI couldn't find the plate at all (best outcome for the research — the distortion fully succeeded). It saves a spreadsheet of every result for later analysis.
+ 
+**`PlateShapeCreator/plate-shapes/PlateShapez.pde` — The Original Prototype**
+This was the very first version of the idea, built quickly in a beginner-friendly coding environment called Processing. It proved the concept worked before the full Python system was built. It's like a rough sketch before a finished painting — kept here to show the project's origins and the evolution of the work.
+---
 
 ## Key Findings
 
@@ -173,7 +194,16 @@ This creates a YOLO-compatible directory with `images/{train,val,test}` and `lab
 Class C is the strongest adversarial outcome, as it prevents any downstream recognition. Class B indicates partial effectiveness where the perturbation disrupted character features but not plate-level features used by the detector.
 
 ---
-
+## Withheld Components
+ 
+One component of this research is **not included in this public release**: the per-plate perturbation optimizer, the code that, given a specific license plate string, computes a targeted adversarial pattern calibrated to maximally degrade recognition of that exact plate.
+ 
+While the underlying technique is a direct extension of the parameter sweep tools already present in this repo, publishing a ready-to-run tool that accepts a plate number as input and outputs a tailored evasion pattern would lower the barrier to misuse far too significantly. The distinction matters: the general perturbation framework here is useful for studying ALPR robustness in aggregate; a plate-specific optimizer is a targeted evasion tool, and that's a different thing entirely.
+ 
+The decision not to release it is straightforward, it would cause real harm with very limited additional research benefit, given that the methodology and findings are fully described. Additionally, and perhaps more compellingly: I am far too handsome for prison.
+ 
+Researchers with a legitimate institutional need can reach out directly. Expect to show your IRB approval.
+---
 ## Ethics & Legal
 
 - Only use images you own or have explicit, documented permission to use
