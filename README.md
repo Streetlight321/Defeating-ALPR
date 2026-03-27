@@ -23,8 +23,6 @@ This is a toolkit for programmatically "messing up" license plate images in cont
 **`ALPRGbatch.py` — The Grader**
 After generating hundreds of distorted images, this tool runs all of them through the plate reader automatically and scores the results. It sorts every image into one of three buckets: the AI read it correctly (bad — the distortion didn't work), the AI read it but got it wrong (partial success), or the AI couldn't find the plate at all (best outcome for the research — the distortion fully succeeded). It saves a spreadsheet of every result for later analysis.
  
-**`PlateShapeCreator/plate-shapes/PlateShapez.pde` — The Original Prototype**
-This was the very first version of the idea, built quickly in a beginner-friendly coding environment called Processing. It proved the concept worked before the full Python system was built. It's like a rough sketch before a finished painting — kept here to show the project's origins and the evolution of the work.
 ---
 
 ## Key Findings
